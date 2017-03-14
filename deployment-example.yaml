@@ -1,0 +1,50 @@
+# vim: set ft=yaml:
+# -*- mode: yaml -*-
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: kube-gce-cleanup
+  namespace: kube-system
+  labels:
+    app: kube-gce-cleanup
+spec:
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app: kube-gce-cleanup
+
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+    type: RollingUpdate
+
+  template:
+    metadata:
+      labels:
+        app: kube-gce-cleanup
+
+    spec:
+      containers:
+        - image: quay.io/getpantheon/kube-gce-cleanup:master
+          name: kube-gce-cleanup
+          imagePullPolicy: Always
+          env:
+            - name: PROJECT
+              value: fooproject
+            - name: REGION
+              value: us-central1
+            - name: GKE_CLUSTER_NAME
+              value: cluster-01
+            - name: KUBE_CONTEXT
+              value: gke_fooproject_us-central1-b_cluster-01
+
+          resources:
+            limits:
+              cpu: 2.0
+              memory: 256Mi
+            requests:
+              cpu: 0.1
+              memory: 64Mi

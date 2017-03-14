@@ -1,0 +1,25 @@
+---
+machine:
+  environment:
+    PATH: $PATH:$HOME/.cabal/bin/
+  services:
+    - docker
+
+dependencies:
+  cache_directories:
+    - ~/.cabal
+  override:
+    - make deps-circle
+
+test:
+  override:
+    - make test-circle
+    - make build-docker
+
+deployment:
+  production:
+    branch:
+      - master
+      - release-test
+    commands:
+      - make push
