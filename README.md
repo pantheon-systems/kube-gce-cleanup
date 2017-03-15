@@ -34,7 +34,6 @@ Configuration is handled through environment variables:
 - `PROJECT`: The GCE project that we should operate on
 - `REGION`: The region where GCE resources should be probed
 - `GKE_CLUSTER_NAME`: The Kube cluster name for verifying network resources against
-- `KUBE_CONTEXT`: The Kube context to use
 
 ### Running the script
 
@@ -43,7 +42,6 @@ Set the env variables and execute the script
 PROJECT=myproject \
 REGION=us-central1 \
 GKE_CLUSTER_NAME=cluster-01 \
-KUBE_CONTEXT=gke_fooproject_us-central1-b_cluster-01\
 ./delete-orphaned-kube-network-resources.sh
 
 ```

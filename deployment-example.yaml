@@ -38,8 +38,6 @@ spec:
               value: us-central1
             - name: GKE_CLUSTER_NAME
               value: cluster-01
-            - name: KUBE_CONTEXT
-              value: gke_fooproject_us-central1-b_cluster-01
 
           resources:
             limits:
