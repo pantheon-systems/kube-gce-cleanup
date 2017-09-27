@@ -1,0 +1,21 @@
+---
+version: 2
+jobs:
+  build:
+    working_directory: ~/kube-gce-cleanup
+    docker:
+      - image: circleci/golang:1.9
+    environment:
+      PATH: $PATH:$HOME/.cabal/bin/
+    steps:
+      - checkout
+      - setup_remote_docker
+      - run: make deps-circle
+      - run: make test-circle
+      - run: make build-docker
+      - deploy:
+          name: push image to quay.io
+          command: |
+            if [[ "${CIRCLE_BRANCH}" == "master" ]]; then
+              make push
+            fi
