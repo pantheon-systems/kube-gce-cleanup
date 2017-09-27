@@ -19,10 +19,10 @@
 #     REGION=us-central1 \
 #     GKE_CLUSTER_NAME=cluster-01 \
 #   ./delete-orphaned-kube-network-resources.sh
-#
 
 set -eou pipefail
 
+DRYRUN=${DRYRUN:-}
 PROJECT=${PROJECT:-}
 REGION=${REGION:-}
 GKE_CLUSTER_NAME=${GKE_CLUSTER_NAME:-}
@@ -110,7 +110,7 @@ main() {
 
     LIST=$(gcloud "--project=${PROJECT}" compute firewall-rules list \
             --format='value(name)' \
-            --filter="name ~ ^k8s-fw- AND -tags gke-${GKE_CLUSTER_NAME}-*")
+            --filter="name ~ ^k8s-fw- AND -tags gke-${GKE_CLUSTER_NAME}-")
     for x in ${LIST}; do
         if ! valid "$x"; then
             # extract the 32-char "id", ex: "k8s-fw-a018702dbb5d111e6bdee42010af0012" => "a018702dbb5d111e6bdee42010af0012"
@@ -118,8 +118,10 @@ main() {
             local kube_id
             kube_id=$(sed 's/.*k8s-fw-\([a-z0-9]\{32\}\).*/\1/' <<<"${x}")
 
-            echo "  DELETING $kube_id, this will take several minutes ..."
-            ##delete_gce_lb_objects "$kube_id"
+            if [[ -z "$DRYRUN" ]] ; then
+              echo "  DELETING $kube_id, this will take several minutes ..."
+              delete_gce_lb_objects "$kube_id"
+            fi
             deleted=$((deleted + 1))
         fi
         total=$((total + 1))
