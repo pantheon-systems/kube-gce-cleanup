@@ -55,7 +55,7 @@ valid() {
     local id="$1"
     local fw_json description service_name ip
 
-    fw_json=$(gcloud compute firewall-rules describe "${id}" --format=json)
+    fw_json=$(gcloud --project="${PROJECT}" compute firewall-rules describe "${id}" --format=json)
     description=$(jq -r .description <<<"$fw_json")
     service_name=$(jq -r '."kubernetes.io/service-name"' <<<"$description")
     ip=$(jq -r '."kubernetes.io/service-ip"' <<<"$description")
