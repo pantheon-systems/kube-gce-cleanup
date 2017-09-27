@@ -3,10 +3,9 @@
 
 set -eo pipefail
 
-INTERVAL="${INTERVAL:-6h}"
-
 # NOTE this only works with JSON files, not p12
 if [[ -n "$GOOGLE_APPLICATION_CREDENTIALS" ]]; then
+    echo "Setting up service-account"
     gcloud auth activate-service-account "--key-file=$GOOGLE_APPLICATION_CREDENTIALS"
 fi
 
