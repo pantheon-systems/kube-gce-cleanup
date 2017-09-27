@@ -1,4 +1,4 @@
-FROM quay.io/getpantheon/gcloud-kubectl:225
+FROM quay.io/getpantheon/gcloud-kubectl:233
 
 ADD delete-orphaned-kube-network-load-balancers.sh /
 ADD docker-run.sh  /
