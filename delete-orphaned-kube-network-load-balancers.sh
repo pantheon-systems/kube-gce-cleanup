@@ -25,6 +25,7 @@ set -eou pipefail
 DRYRUN=${DRYRUN:-}
 PROJECT=${PROJECT:-}
 REGION=${REGION:-}
+KUBE_CONTEXT=${KUBE_CONTEXT:-}
 GKE_CLUSTER_NAME=${GKE_CLUSTER_NAME:-}
 
 
@@ -32,10 +33,11 @@ GKE_CLUSTER_NAME=${GKE_CLUSTER_NAME:-}
 # Check required enviroement is setup
 #######################################
 validate() {
-    if [[ -z "$PROJECT" ]] || [[ -z "$REGION" ]] || [[ -z "$GKE_CLUSTER_NAME" ]] ; then
+    if [[ -z "$PROJECT" ]] || [[ -z "$REGION" ]] || [[ -z "$GKE_CLUSTER_NAME" ]] || [[ -z $KUBE_CONTEXT ]] ; then
         echo "Env vars must be set"
         echo "PROJECT:'$PROJECT'"
         echo "REGION:'$REGION'"
+        echo "KUBE_CONTEXT:'$KUBE_CONTEXT'"
         echo "GKE_CLUSTER_NAME:'$GKE_CLUSTER_NAME'"
         exit 1
     fi
@@ -99,7 +101,7 @@ delete_gce_lb_objects() {
 main() {
     validate
 
-    ACTIVE_IPS=$(kubectl get services --all-namespaces -o json | jq -r '.items[].status.loadBalancer.ingress[0].ip' | sort | uniq)
+    ACTIVE_IPS=$(kubectl --context="${KUBE_CONTEXT}" get services --all-namespaces -o json | jq -r '.items[].status.loadBalancer.ingress[0].ip' | sort | uniq)
     if [[ -z "$ACTIVE_IPS" ]]; then
         echo "ERROR: failed to get a list of public service IP's from the kube cluster"
         exit 1
@@ -108,6 +110,7 @@ main() {
     total=0
     deleted=0
 
+    verb="should be deleted"
     LIST=$(gcloud "--project=${PROJECT}" compute firewall-rules list \
             --format='value(name)' \
             --filter="name ~ ^k8s-fw- AND -tags gke-${GKE_CLUSTER_NAME}-")
@@ -119,6 +122,7 @@ main() {
             kube_id=$(sed 's/.*k8s-fw-\([a-z0-9]\{32\}\).*/\1/' <<<"${x}")
 
             if [[ -z "$DRYRUN" ]] ; then
+              verb="deleted"
               echo "  DELETING $kube_id, this will take several minutes ..."
               delete_gce_lb_objects "$kube_id"
             fi
@@ -127,7 +131,7 @@ main() {
         total=$((total + 1))
     done
 
-    echo "deleted: $deleted"
+    echo "$verb: $deleted"
     echo "total scanned: $total"
 }
 
