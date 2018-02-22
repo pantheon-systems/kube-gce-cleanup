@@ -18,12 +18,6 @@ we realized what was happening (with the help of google support) we were seeing
 
 <!-- tocstop -->
 
-Limitations
------------
-
-*Currently this script is only one cluster/region/project aware. If you run 
-multiple clusters in the same GCE project you may destroy in-use resources.*
-
 Usage
 -----
 
@@ -34,6 +28,7 @@ Configuration is handled through environment variables:
 - `PROJECT`: The GCE project that we should operate on
 - `REGION`: The region where GCE resources should be probed
 - `GKE_CLUSTER_NAME`: The Kube cluster name for verifying network resources against
+- `KUBE_CONTEXT`: the kube context to use when running kubectl commands
 
 ### Running the script
 
@@ -41,13 +36,13 @@ Set the env variables and execute the script
 ```
 PROJECT=myproject \
 REGION=us-central1 \
-GKE_CLUSTER_NAME=cluster-01 \
-./delete-orphaned-kube-network-resources.sh
-
+GKE_CLUSTER_NAME=dev-01 \
+KUBE_CONTEXT=gke_some-project_us-west1-a_dev01 \
+./delete-orphaned-kube-network-load-balancers.sh
 ```
 
-This script is derived from the similar script in the kubernetes github repo. 
-That script deletes load-balancers that are pointing to nodes that no longer 
+This script is derived from the similar script in the kubernetes github repo.
+That script deletes load-balancers that are pointing to nodes that no longer
 exist. This is helpful but does not cleanup all orphaned resources.
 
 The `delete-orphaned-kube-network-load-balancers.sh` is written and maintained
@@ -71,5 +66,5 @@ It's just a simple shell script. All code should pass shellcheck linting
 [Google Shell Style Guide](https://google.github.io/styleguide/shell.xml).
 
 `make build-docker` will build the docker container. `make push` will push
-it to quay.io. You can override the repo by setting the REGISTRY variable on 
+it to quay.io. You can override the repo by setting the REGISTRY variable on
 the make task.
