@@ -33,6 +33,38 @@ total=0
 deleted=0
 verb="should be deleted"
 
+
+#######################################
+# Detects if this is a pod in a cluster, and validates that the passed in cluster
+# is the cluster we are running in.
+#
+# If we are in a cluster set the KUBE_CONTEXT to a custom context representing
+# the current cluster, and ignore any context passed in by the user.
+#######################################
+in_cluster_setup() {
+    # if we are a pod in kube, this env var should exist, if not we just return since this func
+    # is only meant to run if we are in a cluster
+    if [[ -z "$KUBERNETES_SERVICE_HOST" ]] ; then
+        return
+    fi
+    echo "Detected we are running in a kube pod."
+    echo "Will run some checks before continuing."
+
+    # Lets verify that our cluster == the name that someone passed in... Just in case
+    meta_kube_cluster=$(curl http://169.254.169.254/computeMetadata/v1/instance/attributes/cluster-name -q -H "Metadata-Flavor: Google")
+    if [[ "$GKE_CLUSTER_NAME" != "$meta_kube_cluster" ]] ; then
+        echo "You said GKE_CLUSTER_NAME is '$GKE_CLUSTER_NAME' but Google metadata says it's '$meta_kube_cluster'"
+        echo "In case this was a mistake we wont continue."
+        exit 1
+    fi
+
+    # this is a hack to work around not having to do custom in/out of cluster kubectl commands
+    # we ignore any supplied context when running in kube, and instead make our own
+    echo "Creating a context for cluster"
+    kubectl config set-context local-cluster --namespace=default
+    KUBE_CONTEXT="local-cluster"
+}
+
 #######################################
 # Check required enviroement is setup
 #######################################
@@ -103,6 +135,7 @@ delete_gce_lb_objects() {
     wait
     set -e
 }
+
 
 check_firewalls() {
     ACTIVE_IPS=$(kubectl --context="${KUBE_CONTEXT}" get services --all-namespaces -o json | jq -r '.items[].status.loadBalancer.ingress[0].ip' | sort | uniq)
@@ -189,6 +222,7 @@ main() {
         verb="Deleted"
     fi
 
+    in_cluster_setup
     validate
     check_target_pools
     check_firewalls
