@@ -22,7 +22,6 @@
 #   ./delete-orphaned-kube-network-resources.sh
 
 set -eou pipefail
-
 DRYRUN=${DRYRUN:-}
 PROJECT=${PROJECT:-}
 REGION=${REGION:-}
@@ -167,39 +166,69 @@ check_firewalls() {
 
 }
 
+# Check if the target pool has valid member nodes in the current cluster.
+#
+# Returns:
+#   0 - the target-pool has nodes in use in the cluster
+#   1 - the target-pool has no nodes backing it in the cluster
 valid_target_pool() {
     targets=$1
     for i in $targets ; do
+        # guard for the case where a target pool has targets not in this cluster
+        if [[ ! "$target_nodes" =~ gke-${GKE_CLUSTER_NAME}.* ]] ; then
+            echo "-> not in cluster, skipping"
+            return 0
+        fi
+
         if grep -q "$targets" <<<"$current_nodes" ; then
-            #echo " -> target node $i in use!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+            #echo " -> target node $i in use "
             return 0
         fi
     done
-    #echo " -> No endpoints exist for this target"
+    echo " -> No endpoints exist for this target"
     return 1
 }
 
+# check target pools for members that belong to the cluster, and also if they have
+# a matching forwarding_rule for the project. If either there are no members or no
+# forwarding rule then delete the firewall components for this rule.
+#
+# where we can we try to be as cautious as possible and scope these things to
+# the specific cluster, but some kube managed gcloud objects don't have tags
+# that indicate what cluster they belong to.
+#
+# in the case where we have a target pool that has no nodes, we will remove it.
+# this can unexpectedly remove a target pool that actually was not belonging to the
+# cluster if there are other clusters in the project. However a target pool without
+# nodes isn't really active anyway
 check_target_pools() {
     delete=()
+    # filter node list to cluster nodes
+    current_nodes=$(gcloud --project="$PROJECT" compute instances list --format='value(name)' --filter="name ~ ^gke-$GKE_CLUSTER_NAME" )
 
-    current_nodes=$(gcloud --project="$PROJECT" compute instances list --format='value(name)' )
-    targets=$(gcloud --project="$PROJECT" compute target-pools list --format='value(name)' --filter="region:( $REGION )")
+    # get all the current forwarding_rules so we can check if the target has valid forwarding rules
     current_forwarding_rules=$(gcloud --project="$PROJECT" compute forwarding-rules list --format='value(name)'  )
-    for tp in $targets ; do
-        echo "checking target $tp"
+
+    # run over each target object in base64 encoded strings, we will decode and pull out the fields we are interested in
+    # inside the loop, reducing the recursive calling to the slow gcloud api.
+    for target in $(gcloud --project="$PROJECT" compute target-pools list --format='json' --filter="region:( $REGION )" | jq -r '.[] | @base64' ) ; do
+        target_json=$(base64 --decode <<<"$target")
+        target_name=$(jq -r '.name' <<<"$target_json" )
+
+        echo "checking target $target_name"
         total=$(( total + 1 ))
 
-        target_nodes=$(gcloud --project="$PROJECT" compute target-pools describe "$tp" --region="$REGION"  | grep zone | grep instances | awk -F/  '{print $11}')
+        target_nodes=$(jq -r '.instances' <<<"$target_json"  | awk -F/  '{print $11}')
         if ! valid_target_pool "$target_nodes"; then
             echo " => no hosts in target pool; should delete"
-            delete+=("$tp")
+            delete+=("$target_name")
             continue
         fi
 
         # check if theres a forwarding rule for this target pool, if not it's orphaned
-        if ! grep -q "$tp" <<<"$current_forwarding_rules"; then
-            echo "=> no forwarding rule; should delete $tp"
-            delete+=("$tp")
+        if ! grep -q "$target_name" <<<"$current_forwarding_rules"; then
+            echo "=> no forwarding rule; should delete $target_name"
+            delete+=("$target_name")
             continue
         fi
     done
