@@ -171,7 +171,7 @@ check_target_pools() {
     done
 
     # we should return if we don't have anything to do
-    if ${#delete[@]} -le 0 ; then
+    if [[ ${#delete[@]} -le 0 ]] ; then
         return
     fi
 
