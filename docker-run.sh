@@ -12,7 +12,7 @@ fi
 while true; do
     echo "Executing delete-delete-orphaned-kube-network-load-balancers.sh @ $(date)"
 
-    bash /delete-orphaned-kube-network-load-balancers.sh
+    bash /cleanup/delete-orphaned-kube-network-load-balancers.sh
 
     echo "Sleeping for $INTERVAL"
     sleep "$INTERVAL"
