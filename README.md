@@ -9,7 +9,6 @@ we realized what was happening (with the help of google support) we were seeing
 
 <!-- toc -->
 
-- [Limitations](#limitations)
 - [Usage](#usage)
   * [Configuration](#configuration)
   * [Running the script](#running-the-script)
@@ -28,7 +27,7 @@ Configuration is handled through environment variables:
 - `PROJECT`: The GCE project that we should operate on
 - `REGION`: The region where GCE resources should be probed
 - `GKE_CLUSTER_NAME`: The Kube cluster name for verifying network resources against
-- `KUBE_CONTEXT`: the kube context to use when running kubectl commands
+- `KUBE_CONTEXT`: the kube context to use when running kubectl commands - not needed when running inside a cluster.
 
 ### Running the script
 
