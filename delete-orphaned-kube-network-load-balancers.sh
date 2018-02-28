@@ -169,8 +169,13 @@ check_target_pools() {
             continue
         fi
     done
-    deleted=$(( deleted + ${#delete[@]} ))
 
+    # we should return if we don't have anything to do
+    if ${#delete[@]} -le 0 ; then
+        return
+    fi
+
+    deleted=$(( deleted + ${#delete[@]} ))
     for i in "${delete[@]}" ; do
         if [[ -z "$DRYRUN" ]] ; then
             echo "DELETING target pool and associated objects $i"
