@@ -33,7 +33,9 @@ total=0
 deleted=0
 verb="should be deleted"
 
-source lib/delete-orphans.bash
+bin="$(cd -P -- "$(dirname -- "$0")" && pwd -P)"
+# shellcheck source=lib/delete-orphans.bash
+source "$bin/lib/delete-orphans.bash"
 
 main() {
     if [[ -z "$DRYRUN" ]] ; then
