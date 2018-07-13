@@ -3,6 +3,8 @@
 
 set -eo pipefail
 
+INTERVAL=${INTTERVAL:-600}
+
 # NOTE this only works with JSON files, not p12
 if [[ -n "$GOOGLE_APPLICATION_CREDENTIALS" ]]; then
     echo "Setting up service-account"
