@@ -1,6 +1,8 @@
 GCE cleanup scripts
 ===================
 
+[![Unsupported](https://img.shields.io/badge/Pantheon-Unsupported-yellow?logo=pantheon&color=FFDC28)](https://pantheon.io/docs/oss-support-levels#unsupported)
+
 Scripts in this directory are necessary due to bugs (as of Q1-2017) in GKE that
 cause network load-balancer resources to become orphaned and unused but
 accruing charges against the account. These charges can be substantial. Before
